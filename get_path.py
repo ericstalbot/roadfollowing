@@ -5,76 +5,6 @@ import networkx
 
 apikey = open('apikey.txt').read()
 
-'''
-for making graph
-
-need to handle splitting and inserting nodes
-
-need to handle case where both points on on same link
-
-
-
-
-
-
-'''
-
-
-
-
-
-
-
-#def get_nearest_link(lng, lat):
-#
-#    x_delta = y_delta = .005
-#
-#    min_x, max_x = lng-x_delta, lng+x_delta
-#    min_y, max_y = lat-y_delta, lat+y_delta
-#
-#    j = get_features_by_bounding_box(min_x, min_y, max_x, max_y)
-#     
-#    pnt = shapely.geometry.Point(lng, lat)
-#    
-#    distances = []
-#    
-#    for fet in j['features']:
-#        ID = fet['properties']['cartodb_id'] ###
-#        anode = fet['properties']['anode'] ###
-#        bnode = fet['properties']['bnode'] ###
-#        geom = shapely.geometry.shape(fet['geometry'])
-#        d = geom.distance(pnt)
-#        distances.append((d, (anode, bnode, ID))
-#        
-#    distances.sort()
-#    
-#    return distances[0][1]
-        
-
-
-
-        
-
-
-
-#def get_path(lng0, lat0, lng1, lat1):
-#    
-#    g = get_graph(lng0, lat0, lng1, lat1)
-#    
-#    #here down is tricky part
-#    
-#    
-#    nda0, ndb0, id0 = get_nearest_link(lng0, lat0)
-#    nda1, ndb1, id1 = get_nearest_link(lng1, lat1)
-#    
-#    line0 = shapely.geometry.LineString(g[nda0][ndb0][id0]['coords'])
-#    line1 = shapely.geometry.LineString(g[nda1][ndb1][id1]['coords'])
-#    
-#    
-#    
-#    pnt0 = shapely.geometry.Point(lng0, lat0)
-#    pnt1 = shapely.geometry.Point(lng1, lat1)
-
     
 def get_bounding_box(lng0, lat0, lng1, lat1):    
 
@@ -183,12 +113,12 @@ def insert_node(g, x, y):
     
     shape = g[u][v][k]['shape']
     
-    print (u, v, k)
-    print(type(shape), shape.is_empty)
-    
     distance_along = shape.project(point, True)
     
-    print(distance_along)
+    if distance_along <= 1e-12:
+        return u
+    if distance_along >= (1-1e-12):
+        return v
     
     snapped_point = shape.interpolate(distance_along, True)
     
@@ -219,7 +149,7 @@ def insert_node(g, x, y):
     
     return new_node
     
-def get_path(g, nd0, nd1):
+def get_shortest_path_links(g, nd0, nd1):
 
     path = networkx.shortest_path(g, nd0, nd1, weight='distance')
     
@@ -227,78 +157,50 @@ def get_path(g, nd0, nd1):
         for k in g[a][b]:
             yield g[a][b][k]['distance'], k
     
-    
-    c = []
     for a, b in zip(path[:-1], path[1:]):
         _, k = min(get_link_distances(g, a, b))
+        
+        yield a, b, k
+    
+def get_path_coords(g, path_links):    
+    
+    c = []
+    for a, b, k in path_links:
         
         coords = g[a][b][k]['shape'].coords[:]
         
         if (a, b) != g[a][b][k]['shape_orientation']:
             coords = coords[::-1]
         
-        c.extend(coords[:-1])
+        for xy in coords[:-1]:
+            yield xy
             
-    c.append(coords[-1])
+    yield coords[-1]
     
-    return c
-        
-        
-        
+                
+def get_path(p0, p1):
+   
+    #query area between/around points
+    bbox = get_bounding_box(*p0, *p1)
+    features = get_features_by_bounding_box(*bbox) #this is the geojson
+    g = get_graph(features)
     
+    nd0 = insert_node(g, *p0)
+    nd1 = insert_node(g, *p1)
     
+    path_links = get_shortest_path_links(g, nd0, nd1)
     
+    coords = get_path_coords(g, path_links)
     
-    
-    
-    
-        
+    return {'coords': coords}
+
 if __name__ == "__main__":
     
     
     #make some test points
     p0 = (-72.476723, 43.788497)
     p1 = (-72.454171, 43.785234)
-    
-    #query area between/around points
-    bbox = get_bounding_box(*p0, *p1)
-    features = get_features_by_bounding_box(*bbox) #this is the geojson
-    g = get_graph(features)
-    
-    #if two points on on same link
-    #node insertion must work
-    
-    #if nearest point is at endpoint
-    #either node insertion must work (not sure how zero-length line strings work)
-    #or must return existing node 
-    
-    
-    
-    
-    nd0 = insert_node(g, *p0)
-    nd1 = insert_node(g, *p1)
-    
-    coords = get_path(g, nd0, nd1)
-    
-    with open('test.json', 'wt') as f:
-        f.write(str(list(map(list, coords))))
-    
-'''
-End goal: web service for getting xy coords for paths that follow roads
 
-[ ] get x, y coords for path between two points (perfect this)
-[ ] put web interface on it - get it up and running live (python anywhere?)
-[ ] expand to 3 or more points
-[ ] add locked points
-[ ] add linear ring (same first and last points)
-[ ] documentation, github, blog (all online)
-
-
-extra
-[ ] web interface for getting lines
-
-
-
-'''    
-
-
+    path = get_path(p0, p1)
+    
+    print(list(path['coords']))
