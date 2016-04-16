@@ -8,9 +8,9 @@ apikey = open('apikey.txt').read()
     
 def get_bounding_box(lng0, lat0, lng1, lat1):    
 
-    delta_x = 0.01 + abs(lng1 - lng0) * .1
+    delta_x = 0.1 + abs(lng1 - lng0) * .1
     
-    delta_y = 0.01 + abs(lat1 - lat0) * .1
+    delta_y = 0.1 + abs(lat1 - lat0) * .1
     
     min_x, max_x = sorted((lng0, lng1))
     min_x -= delta_x
@@ -178,7 +178,7 @@ def get_path_coords(g, path_links):
     yield coords[-1]
     
                 
-def get_path(p0, p1):
+def _get_path(p0, p1):
    
     #query area between/around points
     bbox = get_bounding_box(*p0, *p1)
@@ -187,13 +187,26 @@ def get_path(p0, p1):
     
     nd0 = insert_node(g, *p0)
     nd1 = insert_node(g, *p1)
-    
+    #todo : handle nd0 and nd1 are same node
     path_links = get_shortest_path_links(g, nd0, nd1)
     
     coords = get_path_coords(g, path_links)
     
-    return {'coords': coords}
+    return {'coords': list(coords)}
 
+def get_path(points):
+    assert len(points) > 1
+    
+    coords = []
+    
+    for p0, p1 in zip(points[:-1], points[1:]):
+        r = _get_path(p0, p1)
+        coords.extend(r['coords'][:-1])
+        
+    coords.append(coords[-1])
+    
+    return {'coords': coords}
+    
 if __name__ == "__main__":
     
     
