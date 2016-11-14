@@ -204,7 +204,7 @@ def get_path(points):
         r = _get_path(p0, p1)
         coords.extend(r['coords'][:-1])
 
-    coords.append(coords[-1])
+    coords.append(r['coords'][-1])
 
     return {'coords': coords}
 
