@@ -1,6 +1,7 @@
 import requests
+from os.path import join, dirname
 
-apikey = open('apikey.txt').read()
+apikey = open(join(dirname(dirname(__file__)),'apikey.txt')).read()
 
 r = requests.post(
 
