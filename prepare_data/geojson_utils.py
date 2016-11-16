@@ -14,6 +14,6 @@ def get_feature(coords, props, ID=None):
     }
     
     if ID is not None:
-        ret['properties']['id'] = i
+        ret['properties']['id'] = ID
     
     return ret      

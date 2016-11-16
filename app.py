@@ -14,10 +14,15 @@ def path():
 
     return jsonify(path)
 
+
+@app.route('/ride/<string:ride_id>', methods=['GET', 'PUT'])
+def route(ride_id):
+    if request
+
+
+
+
 @app.route('/')
 def main():
     return render_template('gtfsspatial.html')
 
-
-if __name__ == '__main__':
-    app.run(debug=False)

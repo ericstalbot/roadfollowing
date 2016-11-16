@@ -1,5 +1,5 @@
 from prepare_link_data import get_processed_data
-from vtransroads.vtransroads import get_tags, drop
+from vtransroads import get_tags, drop
 import fiona.crs
 
 import simplejson

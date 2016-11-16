@@ -3,8 +3,9 @@ import shapely.geometry
 from shapely.geometry import LineString, Point
 import networkx
 from os.path import join, dirname
+import os
 
-apikey = open(join(dirname(__file__),'apikey.txt')).read()
+apikey = os.environ['CARTO_API_KEY']
 
 
 def get_bounding_box(lng0, lat0, lng1, lat1):
@@ -27,7 +28,7 @@ def get_bounding_box(lng0, lat0, lng1, lat1):
 
 def get_features_by_bounding_box(min_x, min_y, max_x, max_y):
     q = '''SELECT *
-        FROM   vermont_roads
+        FROM   vermont_roads_1
         WHERE  the_geom
             &&
             ST_MakeEnvelope (

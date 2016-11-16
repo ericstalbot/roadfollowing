@@ -36,6 +36,14 @@ def drop(rec):
         return False
 
 tag_dtypes = {'road_class': str, 'is_paved': str}        
+
+def process_name(name):
+    if name is None:
+        return None
+    name = name.strip()
+    if not name:
+        return None
+    return name
         
 def get_tags(rec):
     props = rec['properties']
@@ -44,7 +52,8 @@ def get_tags(rec):
     
     tags = {
         'road_class': aotclass_mapping[aotclass],
-        'is_paved': surface_mapping[surface]
+        'is_paved': surface_mapping[surface],
+        'name': process_name(props["PRIMARYNAM"])
     }
     
     return tags
