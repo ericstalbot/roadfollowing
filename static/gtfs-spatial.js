@@ -6,6 +6,7 @@ var locked_status; //boolean array  - same length as markers
 var marker_icons = {}; // to hold the marker icons
 var polyline; //the line that shows the route
 var coords;
+var parts;
 
 
 function initialize(){
@@ -260,6 +261,7 @@ function updateShape(response, status){
     var latlngs = [];
 
     coords = response.coords;
+    parts = response.parts
 
     for (i = 0; i < response.coords.length; i++){
 
@@ -279,12 +281,17 @@ function onEnter(){
 }
 
 
+function getLatLngFromXy(xy){
+    var lls = [];
+    for (i = 0; i < xy.length; i++){
+        ll = L.latLng(xy[i][1], xy[i][0])
+        lls.push(ll)
+    }
+    return lls;
+}
 
-function getShape(){
-    // it all starts here
 
-    polyline.setLatLngs([]);
-
+function getXyFromMarkers(markers){
     var xy;
     xy = [];
 
@@ -292,6 +299,17 @@ function getShape(){
         ll = markers[i].getLatLng()
         xy.push([ll.lng, ll.lat])
     }
+
+    return xy
+}
+
+
+function getShape(){
+    // it all starts here
+
+    polyline.setLatLngs([]);
+
+    var xy = getXyFromMarkers(markers)
 
     var query = buildQuery(xy);
 
@@ -309,21 +327,19 @@ function buildQuery(xy){
 }
 
 
-function save(access_token, user_name, dataset_id, feature_id){
+function save(ride_id){
 
     payload = JSON.stringify({
-      "id": feature_id,
-      "type": "Feature",
-      "geometry": {
-        "type": "LineString",
-        "coordinates": coords
-      },
-      "properties": {}
-    })
+      "id": ride_id,
+      "shape_coordinates": coords,
+      "waypoint_coordinates": getXyFromMarkers(markers),
+      "parts": parts
+      })
 
 
+    console.log(payload)
 
-    url = "https://api.mapbox.com/datasets/v1/"+user_name+"/"+dataset_id+"/features/"+feature_id+"?access_token="+access_token
+    url = "/ride/"+ride_id
     simpleHttpRequest(url,
         function(response){console.log(response)},
         function(status, response){console.log(status)},
@@ -331,6 +347,45 @@ function save(access_token, user_name, dataset_id, feature_id){
         payload
         )
 }
+
+
+function load(ride_id){
+
+    url = "/ride/"+ride_id
+
+    simpleHttpRequest(url,
+        function(response){
+            console.log(response)
+
+            r = response
+
+
+            while (markers.length > 0) {
+                m = markers[0]
+                deleteMarker(m)
+            }
+
+            marker_latlngs = getLatLngFromXy(r.waypoint_coordinates)
+
+            for (i = 0; i < marker_latlngs.length; i++) {
+                addMarker(marker_latlngs[i])
+            }
+
+
+            shape_latlngs = getLatLngFromXy(r.shape_coordinates)
+            polyline.setLatLngs(shape_latlngs);
+            polyline.bringToFront();
+
+            parts = response.parts
+            coords = r.shape_coordinates
+
+
+        },
+        function(status, response){console.log(status)},
+        "GET"
+        )
+}
+
 
 
 function makeHttpObject() {

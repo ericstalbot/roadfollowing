@@ -179,6 +179,12 @@ def get_path_coords(g, path_links):
 
     yield coords[-1]
 
+def get_path_attributes(g, path_links):
+    for a, b, k in path_links:
+        r = g[a][b][k].copy()
+        r.pop('shape')
+        yield r
+
 
 def _get_path(p0, p1):
 
@@ -190,24 +196,33 @@ def _get_path(p0, p1):
     nd0 = insert_node(g, *p0)
     nd1 = insert_node(g, *p1)
     #todo : handle nd0 and nd1 are same node
-    path_links = get_shortest_path_links(g, nd0, nd1)
+    path_links = list(get_shortest_path_links(g, nd0, nd1))
 
     coords = get_path_coords(g, path_links)
 
-    return {'coords': list(coords)}
+    return {'coords': list(coords),
+            'links': path_links,
+            'properties': list(get_path_attributes(g, path_links))}
 
 def get_path(points):
     assert len(points) > 1
 
     coords = []
 
+    parts = []
+
+
     for p0, p1 in zip(points[:-1], points[1:]):
         r = _get_path(p0, p1)
+        parts.append(r)
         coords.extend(r['coords'][:-1])
 
     coords.append(r['coords'][-1])
 
-    return {'coords': coords}
+
+
+
+    return {'coords': coords, 'parts': parts}
 
 if __name__ == "__main__":
 
