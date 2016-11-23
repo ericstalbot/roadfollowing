@@ -38,6 +38,9 @@ def route(ride_id):
         return jsonify(r)
 
 
+@app.route('/ride/<string:ride_id>/view', methods=['GET'])
+def view_ride(ride_id):
+  return render_template('viewride.html', ride_id=ride_id)
 
 @app.route('/')
 def main():
